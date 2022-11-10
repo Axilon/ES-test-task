@@ -20,7 +20,7 @@ namespace Lightning
 
         public void SetParent(Transform parent)
         {
-            _transform.parent = parent;
+            _transform.SetParent(parent);
         }
 
         public void SetPosition(Vector2 newPos)

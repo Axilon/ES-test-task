@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace LightningGenerator
 {
-    public class LightningGeneratorHelper : IDisposable
+    public class LightningGeneratorHelper
     {
         private Dictionary<(LightningType, bool), Func<EndPointData, BaseNodeComponent>> _actionsMap;
 
@@ -65,7 +65,7 @@ namespace LightningGenerator
                     case LightningType.Bold when !component.HasTransitions:
                         _boldCompleteNodes.Add(component);
                         continue;
-                    case LightningType.Thin when !component.HasTransitions:
+                    case LightningType.Thin when component.HasTransitions:
                         _thinTransitionNodes.Add(component);
                         continue;
                     default:
@@ -77,16 +77,18 @@ namespace LightningGenerator
         public async Task<NodeWithTransitionComponent> GetStartNode()
         {
             if(_boldTransitionNodes.Count <= 0 && _thinTransitionNodes.Count <= 0) return null;
+            
+            var randValue = new System.Random().Next();
+            var randStartType = randValue > int.MaxValue * 0.5f ? LightningType.Bold : LightningType.Thin;
 
             var result = await Task.Run(() =>
             {
-                var nodeType = new System.Random().Next() > int.MaxValue * 0.5f ? LightningType.Bold : LightningType.Thin;
-                var node = _actionsMap[(nodeType, false)].Invoke(null);
+                var node = _actionsMap[(randStartType, false)].Invoke(null);
             
                 if (node != null) return node;
-                nodeType = nodeType == LightningType.Bold ? LightningType.Thin : LightningType.Bold;
+                randStartType = randStartType == LightningType.Bold ? LightningType.Thin : LightningType.Bold;
             
-                return _actionsMap[(nodeType,false)].Invoke(null);
+                return _actionsMap[(randStartType,false)].Invoke(null);
             }, _cancellationTokenSource.Token);
 
             return result? result as NodeWithTransitionComponent : null;
@@ -94,29 +96,30 @@ namespace LightningGenerator
         
         public async Task<BaseNodeComponent> GetNextNode(EndPointData fromNode, bool canBeComplete)
         {
+            var shouldBeComplete = canBeComplete && new System.Random().Next() > int.MaxValue * 0.5f;
+            
             var result = await Task.Run(() =>
             {
-                var shouldBeComplete = canBeComplete && new System.Random().Next() > int.MaxValue * 0.5f;
 
                 var paramsStack = new Stack<(LightningType, bool)>();
 
                 switch (fromNode.EndNodeType)
                 {
                     case LightningType.Bold when !shouldBeComplete:
-                        paramsStack.Push((LightningType.Bold, false));
                         paramsStack.Push((LightningType.Bold, true));
+                        paramsStack.Push((LightningType.Bold, false));
                         break;
                     case LightningType.Bold:
-                        paramsStack.Push((LightningType.Bold, true));
                         paramsStack.Push((LightningType.Bold, false));
+                        paramsStack.Push((LightningType.Bold, true));
                         break;
                     case LightningType.Thin when !shouldBeComplete:
-                        paramsStack.Push((LightningType.Thin, false));
                         paramsStack.Push((LightningType.Thin, true));
+                        paramsStack.Push((LightningType.Thin, false));
                         break;
                     case LightningType.Thin:
-                        paramsStack.Push((LightningType.Thin, true));
                         paramsStack.Push((LightningType.Thin, false));
+                        paramsStack.Push((LightningType.Thin, true));
                         break;
                 }
 
@@ -137,18 +140,15 @@ namespace LightningGenerator
         {
             var listCopy = new List<BaseNodeComponent>(checkList);
             var rand = new System.Random();
-            
-            BaseNodeComponent node = null;
-            
+
             while (listCopy.Count > 0)
             {
-                node = listCopy[rand.Next(0, listCopy.Count)];
-                if (CanBeNextNode(fromPoint, node)) break;
+                var node = listCopy[rand.Next(0, listCopy.Count)];
+                if (CanBeNextNode(fromPoint, node)) return node;
                 listCopy.Remove(node);
-                node = null;
             }
             
-            return node;
+            return null;
         }
         
         private bool CanBeNextNode(EndPointData endPoint, BaseNodeComponent checkNode)
