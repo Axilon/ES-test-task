@@ -93,7 +93,7 @@ namespace LightningGenerator
 
             return result? result as NodeWithTransitionComponent : null;
         }
-        
+
         public async Task<BaseNodeComponent> GetNextNode(EndPointData fromNode, bool canBeComplete)
         {
             var shouldBeComplete = canBeComplete && new System.Random().Next() > int.MaxValue * 0.5f;

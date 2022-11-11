@@ -1,29 +1,34 @@
 using System;
 using UnityEngine;
+using VideoRecorder;
 
 namespace ApplicationContext
 {
     public class ApplicationContext : MonoBehaviour
     {
-        [SerializeField] private LightningGenerator.LightningGenerator LightningGenerator;
-        [SerializeField] private LightningManager.LightningManager LightningManager;
+        [SerializeField] private LightningGenerator.LightningGenerator _lightningGenerator;
+        [SerializeField] private LightningManager.LightningManager _lightningManager;
+        [SerializeField] private VideoRecorderManager _videoRecorderManager;
 
         private void Awake()
         {
-            LightningGenerator.Init();
-            LightningManager.Init();
+            _videoRecorderManager.Init();
+            _lightningGenerator.Init();
+            _lightningManager.Init();
         }
         
         private void Start()
         {
-            LightningGenerator.InitComplete();
-            LightningManager.InitComplete();
+            _videoRecorderManager.InitComplete();
+            _lightningGenerator.InitComplete();
+            _lightningManager.InitComplete();
         }
 
         private void OnDestroy()
         {
-            LightningGenerator.Dispose();
-            LightningManager.Dispose();
+            _videoRecorderManager.Dispose();
+            _lightningGenerator.Dispose();
+            _lightningManager.Dispose();
         }
     }
 }
