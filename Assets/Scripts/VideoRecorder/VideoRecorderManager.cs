@@ -1,3 +1,4 @@
+using System;
 using Interfaces;
 using UnityEditor;
 using UnityEditor.Recorder;
@@ -17,6 +18,7 @@ namespace VideoRecorder
         [SerializeField] private Color _recordingColor = Color.red;
         
         [Header("Settings")]
+        [SerializeField] private bool _useScreenSize;
         [SerializeField] private bool _initOnAwake;
         [SerializeField] private bool _preserveAudio = true;
         [SerializeField] private VideoBitrateMode _bitrateMode;
@@ -71,13 +73,12 @@ namespace VideoRecorder
             _movieRecorderSettings.VideoBitRateMode = _bitrateMode;
             _movieRecorderSettings.ImageInputSettings = new GameViewInputSettings()
             {
-                OutputWidth = _outputWidth,
-                OutputHeight = _outputHeigth
+                OutputWidth = _useScreenSize ? Screen.width : _outputWidth,
+                OutputHeight = _useScreenSize ? Screen.height : _outputHeigth
             };
-            _movieRecorderSettings.OutputFormat = MovieRecorderSettings.VideoRecorderOutputFormat.MP4;
+            _movieRecorderSettings.OutputFormat = MovieRecorderSettings.VideoRecorderOutputFormat.MOV;
             _movieRecorderSettings.AudioInputSettings.PreserveAudio = _preserveAudio;
             
-            _recorderControllerSettings.SetRecordModeToFrameInterval(0, 59); // 2s @ 30 FPS
             _recorderControllerSettings.FrameRate = _frameRate;
             RecorderOptions.VerboseMode = false;
             
@@ -106,7 +107,7 @@ namespace VideoRecorder
         private void StopRecording()
         {
             if(!_initialized) return;
-            if(!_recorderController.IsRecording()) return;
+            if(_recorderController == null || !_recorderController.IsRecording()) return;
             _recorderController.StopRecording();
             
             SetButtonsColor(_defaultColor);
@@ -114,14 +115,15 @@ namespace VideoRecorder
         
         private string GetFileName()
         {
-            _lastClipName = "movie_" + DefaultWildcard.Frame + ".mp4";
+            _lastClipName = "movie_" + DateTime.Now.ToString("dd_MMM_yyy_HH_mm_ss");
             return System.IO.Path.Combine(_recordingFolder, _lastClipName);
         }
 
         private void EncodeLastClip()
         {
             if(!_initialized || string.IsNullOrEmpty(_lastClipName) || _recorderController.IsRecording()) return;
-            // some logic
+            FFmpegManager.EncodeVideo(_recordingFolder,_lastClipName,".mov");
+            //FFmpegManager.EncodeVideo("movie_11_Nov_2022_15_17_26","movie_11_Nov_2022_15_17_26");
         }
 
         private void OnDestroy()
